@@ -256,6 +256,7 @@ function normalize(o){
   s.infobox.rows.forEach(r=>{r.id=r.id||uid(); if(!Array.isArray(r.images))r.images=[];});
   s.blocks.forEach(x=>{x.id=x.id||uid(); if(x.type==='table'&&!Array.isArray(x.rows))x.rows=[['']];
     if(x.type==='navbox'&&!Array.isArray(x.images))x.images=[];
+    if(x.type==='spoiler'){ if(x.color==='#c0392b')x.color='#ffa000'; if(x.title==='이 문서에 스포일러가 포함되어 있습니다.')x.title='이 문서에 [[스포일러]]가 포함되어 있습니다.'; }
     if(x.type==='fold'){if(!Array.isArray(x.images))x.images=[]; x.style=x.style||'plain'; x.color=x.color||s.infobox.color||'#2b4a8b'; x.textColor=x.textColor||s.infobox.textColor||'#ffffff'; if(x.label==null)x.label=''; if(x.imgWidth==null)x.imgWidth='';}});
   return s;
 }
@@ -439,8 +440,8 @@ function renderBlock(b,n,ctx){
     case 'image': if(!b.src)return '';
       return `<div style="text-align:${b.align||'center'};margin:12px 0 16px;"><img src="${esc(b.src)}" alt="${esc(b.caption||'')}" style="max-width:100%;${cssLen(b.width)?`width:${cssLen(b.width)};`:''}height:auto;border:0;">${b.caption?`<div style="font-size:0.88em;color:#666666;margin-top:4px;">${inline(b.caption,ctx)}</div>`:''}</div>`;
     case 'navbox': return renderNavbox(b,ctx);
-    case 'spoiler':{const c=safeColor(b.color,'#c0392b');
-      return `<div style="border:2px solid ${c};margin:0 auto 16px;padding:8px 12px;background:#ffffff;color:#212529;text-align:center;line-height:1.6;"><div style="font-weight:bold;color:${c};font-size:1.05em;">⚠ ${inline(b.title,ctx)}</div>${b.text?`<div style="font-size:0.9em;margin-top:2px;">${inline(b.text,ctx)}</div>`:''}</div>`;}
+    case 'spoiler':{const c=safeColor(b.color,'#ffa000');
+      return `<div style="border:1px solid #b0b0b0;border-top:5px solid ${c};margin:0 0 16px;padding:10px 12px 12px;background:#ffffff;color:#212529;text-align:left;"><div style="font-size:1.15em;line-height:1.5;">${inline(b.title,ctx)}</div>${b.text?`<div style="font-size:0.9em;line-height:1.6;margin-top:14px;">${inline(b.text,ctx)}</div>`:''}</div>`;}
     case 'table': return renderTable(b,ctx);
   }
   return '';
@@ -556,7 +557,7 @@ function newBlock(type){
   if(type==='fold')Object.assign(b,{title:'[ 펼치기 · 접기 ]',text:'',style:'plain',label:'',color:state.infobox.color||'#2b4a8b',textColor:state.infobox.textColor||'#ffffff',images:[],imgWidth:''});
   if(type==='image'){b.src='';b.caption='';b.width='';b.align='center'}
   if(type==='navbox')Object.assign(b,{top:true,image:'',title:'상단 틀 제목',titleBg:'#ffffff',titleColor:'#212529',sub:'',toggle:'[ 펼치기 · 접기 ]',body:'',images:[],imgWidth:'',borderColor:'#333333',width:'600px'});
-  if(type==='spoiler')Object.assign(b,{top:true,title:'이 문서에 스포일러가 포함되어 있습니다.',text:'이 문서가 설명하는 작품이나 인물 등에 대한 줄거리, 결말, 반전 요소 등을 직·간접적으로 포함하고 있습니다.',color:'#c0392b'});
+  if(type==='spoiler')Object.assign(b,{top:true,title:'이 문서에 [[스포일러]]가 포함되어 있습니다.',text:'이 문서가 설명하는 작품이나 인물 등에 대한 줄거리, 결말, 반전 요소 등을 직·간접적으로 포함하고 있습니다.',color:'#ffa000'});
   if(type==='table')Object.assign(b,{headerRow:true,headerCol:false,headColor:state.infobox.color||'#2b4a8b',headText:state.infobox.textColor||'#ffffff',borderColor:'#cccccc',width:'100%',align:'center',cellAlign:'left',caption:'',rows:[['항목','내용'],['','']]});
   return b;
 }
@@ -672,7 +673,7 @@ function blockCard(b,i,num){
       h('div',{class:'checks'},cb(b,'top','문서 맨 위에 배치')),
       fld('제목',tf(b,'title')),
       tf(b,'text',{multi:true,rows:2,label:'설명'}),
-      h('div',{class:'colors'},clr(b,'color','강조색')),
+      h('div',{class:'colors'},clr(b,'color','위쪽 선 색')),
       h('p',{class:'note'},'스포일러 내용 자체를 가리고 싶으면 본문에 접기 블록을 넣고 버튼 글자를 [ 스포일러 보기 ]처럼 바꾸세요.')); break;
     case 'table': body=tableEditor(b); break;
     default: body=null;
