@@ -1,7 +1,12 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>나무틀 에디터</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <style>
 /* Layout: top bar + sticky format toolbar; left = form editor, right = live document on a "paper" sheet; tabs on phones */
 :root{
@@ -142,6 +147,9 @@ details.help summary{cursor:pointer;font-weight:700;font-size:13px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
 </style>
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
 
 <div class="app" id="app" data-view="edit">
   <header class="top">
@@ -149,7 +157,8 @@ details.help summary{cursor:pointer;font-weight:700;font-size:13px}
     <div class="sp"></div>
     <button class="btn" id="btnNew" type="button">새 문서</button>
     <button class="btn" id="btnBackup" type="button">백업 · 불러오기</button>
-    <button class="btn pri" id="btnExport" type="button">HTML 내보내기</button>
+    <button class="btn" id="btnExport" type="button">HTML 보기</button>
+    <button class="btn pri" id="btnCopy" type="button">HTML 복사</button>
   </header>
   <nav class="tabs" aria-label="화면 전환">
     <button type="button" data-v="edit" aria-pressed="true">편집</button>
@@ -193,8 +202,8 @@ const uid=()=>Math.random().toString(36).slice(2,9);
 const SAMPLE_IMG='data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="400" height="460" viewBox="0 0 400 460"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d4def0"/><stop offset="1" stop-color="#8aa1cf"/></linearGradient></defs><rect width="400" height="460" fill="url(#g)"/><circle cx="200" cy="170" r="76" fill="#2b4a8b" opacity=".85"/><path d="M68 460c10-118 70-178 132-178s122 60 132 178z" fill="#2b4a8b" opacity=".85"/><text x="200" y="438" font-family="sans-serif" font-size="20" fill="#ffffff" text-anchor="middle">예시 이미지</text></svg>');
 
 function blank(){
-  return {title:'',categories:'',showTitle:true,showToc:true,fixBg:true,loadFont:true,foldMode:'details',
-    infobox:{enabled:true,title:'',subtitle:'',color:'#2b4a8b',textColor:'#ffffff',borderColor:'#2b4a8b',width:'100%',align:'center',valueAlign:'center',image:'',caption:'',
+  return {title:'',categories:'',showTitle:true,showToc:true,fixBg:true,loadFont:true,foldMode:'details',_v2:true,
+    infobox:{enabled:true,title:'',subtitle:'',color:'#2b4a8b',textColor:'#ffffff',borderColor:'#2b4a8b',width:'330px',align:'right',valueAlign:'center',image:'',caption:'',
       rows:[{id:uid(),type:'row',label:'이름',value:''}]},
     blocks:[{id:uid(),type:'heading',level:1,text:'개요'},{id:uid(),type:'text',text:''}]};
 }
@@ -216,8 +225,8 @@ function sample(){
     {id:uid(),type:'full',label:'',value:"{{{#2b4a8b '''차가운 머리, 뜨거운 칼.'''}}}"}
   ]});
   s.blocks=[
-    {id:uid(),type:'quote',text:"'''검은 깃발 아래에서 물러선 적은 한 번도 없다.'''\n― 아델 린드버그, 북해 방어전 직후"},
     {id:uid(),type:'heading',level:1,text:'개요'},
+    {id:uid(),type:'quote',text:"'''검은 깃발 아래에서 물러선 적은 한 번도 없다.'''\n― 아델 린드버그, 북해 방어전 직후"},
     {id:uid(),type:'text',text:"북해 연합 기사단 제3대대를 이끄는 대장. 차분한 말투와 빈틈없는 판단으로 부하들의 신뢰를 받는다.[* 대대원들 사이에서는 '얼음 대장'이라는 별명으로 통한다.]\n전장에서는 쌍검술을 주로 쓰며, 겨울 정령과 맺은 계약 덕분에 냉기 계열 기술에 강하다."},
     {id:uid(),type:'heading',level:1,text:'외모'},
     {id:uid(),type:'text',text:'은빛이 도는 짧은 흑발과 회청색 눈. 기사단 정복 위에 낡은 남색 망토를 두르는데, 전임 대장에게서 물려받은 것이다.[* 망토 안쪽에는 역대 대장들의 이름이 수놓여 있다.]'},
@@ -251,6 +260,7 @@ function normalize(o){
 }
 let state=null;
 try{const raw=localStorage.getItem(LS_KEY); if(raw)state=normalize(JSON.parse(raw));}catch(e){}
+if(state&&!state._v2){state.infobox.align='right';state.infobox.width='330px';state._v2=true;}
 if(!state)state=sample();
 
 /* ---------- renderer (exported HTML: inline styles only, no classes, no scripts) ---------- */
@@ -317,7 +327,7 @@ function renderInfobox(ib,ctx){
   const cell=`border:1px solid ${bc};padding:5px 10px;vertical-align:middle;`;
   const va=ib.valueAlign==='left'?'left':'center';
   let rows='';
-  if(ib.title||ib.subtitle) rows+=`<tr><td colspan="2" style="${cell}background:${bg};color:${tc};text-align:center;padding:9px 10px;">${ib.title?`<div style="font-size:1.35em;font-weight:bold;line-height:1.35;">${inline(ib.title,ctx)}</div>`:''}${ib.subtitle?`<div style="font-size:0.88em;margin-top:2px;">${inline(ib.subtitle,ctx)}</div>`:''}</td></tr>`;
+  if(ib.title||ib.subtitle) rows+=`<tr><td colspan="2" style="${cell}background:${bg};color:${tc};text-align:center;padding:5px 10px;">${ib.title?`<div style="font-size:1.15em;font-weight:bold;line-height:1.4;">${inline(ib.title,ctx)}</div>`:''}${ib.subtitle?`<div style="font-size:0.85em;font-weight:bold;line-height:1.4;">${inline(ib.subtitle,ctx)}</div>`:''}</td></tr>`;
   if(ib.image) rows+=`<tr><td colspan="2" style="${cell}background:#ffffff;text-align:center;padding:8px;"><img src="${esc(ib.image)}" alt="${esc(ib.title||'')}" style="display:block;max-width:100%;height:auto;margin:0 auto;border:0;">${ib.caption?`<div style="font-size:0.85em;color:#666666;margin-top:6px;">${inline(ib.caption,ctx)}</div>`:''}</td></tr>`;
   (ib.rows||[]).forEach(r=>{
     if(r.type==='fold'){
@@ -330,7 +340,7 @@ function renderInfobox(ib,ctx){
     else rows+=`<tr><td style="${cell}background:${bg};color:${tc};text-align:center;font-weight:bold;width:30%;word-break:keep-all;">${inline(r.label,ctx)||'&nbsp;'}</td><td style="${cell}text-align:${va};">${inline(r.value,ctx)||'&nbsp;'}</td></tr>`;
   });
   const pos=ib.align==='right'?'float:right;margin:0 0 16px 16px;':ib.align==='left'?'margin:0 0 16px 0;':'margin:0 auto 16px auto;';
-  return `<table style="width:${cssLen(ib.width,'100%')};max-width:100%;border-collapse:collapse;border:2px solid ${bc};${pos}background:#ffffff;color:#212529;font-size:0.95em;line-height:1.5;">${rows}</table>`;
+  return `<table style="width:${cssLen(ib.width,'100%')};max-width:100%;border-collapse:collapse;border:1px solid ${bc};${pos}background:#ffffff;color:#212529;font-size:0.95em;line-height:1.5;">${rows}</table>`;
 }
 function parseCell(raw){
   let s=String(raw==null?'':raw); const a={};
@@ -388,8 +398,12 @@ function renderFoldBlock(b,ctx){
   return `<div style="margin:8px 0 14px;">${f}</div>`;
 }
 function hid(n){return 'nw-s-'+n.replace(/\./g,'-')}
-function renderToc(heads){
-  return `<div id="nw-toc" style="display:inline-block;min-width:220px;max-width:100%;box-sizing:border-box;border:1px solid #cccccc;padding:10px 22px 12px 16px;margin:4px 0 18px;"><div style="font-size:1.25em;font-weight:bold;margin-bottom:6px;">목차</div>${heads.map(x=>`<div style="margin-left:${(x.L-1)*18}px;line-height:1.8;"><a href="#${hid(x.n)}" style="color:${LINK};text-decoration:none;">${x.n}.</a> ${inline(x.text,{fns:null})}</div>`).join('')}</div>`;
+function renderToc(heads,mode){
+  const items=heads.map(x=>`<div style="margin-left:${(x.L-1)*20}px;line-height:1.75;"><a href="#${hid(x.n)}" style="color:${LINK};text-decoration:none;">${x.n}.</a> ${inline(x.text,{fns:null})}</div>`).join('');
+  const box='display:inline-block;max-width:100%;box-sizing:border-box;border:1px solid #cccccc;padding:10px 18px 10px 12px;margin:0 0 18px;font-size:0.9em;vertical-align:top;';
+  const label='font-size:1.15em;margin-bottom:6px;';
+  if(mode==='tistory')return `<div id="nw-toc" style="${box}"><div style="${label}">목차</div><div style="padding-left:4px;">${items}</div></div>`;
+  return `<details id="nw-toc" open style="${box}"><summary style="display:block;list-style:none;cursor:pointer;${label}">목차<span style="display:inline-block;width:6px;height:6px;border-right:1.5px solid #888888;border-bottom:1.5px solid #888888;transform:rotate(45deg);margin:0 2px 4px 26px;vertical-align:middle;"></span></summary><div style="padding-left:4px;">${items}</div></details>`;
 }
 function renderBlock(b,n,ctx){
   switch(b.type){
@@ -417,11 +431,9 @@ function renderDoc(s,forExport){
   if(s.infobox.enabled)parts.push(renderInfobox(s.infobox,ctx));
   const nums=headingNums(s.blocks); const heads=[];
   s.blocks.forEach((b,i)=>{if(nums[i])heads.push({n:nums[i],L:Math.min(3,Math.max(1,+b.level||1)),text:b.text})});
-  let tocDone=false;
-  s.blocks.forEach((b,i)=>{
-    if(b.type==='heading'&&!tocDone&&s.showToc&&heads.length){parts.push(renderToc(heads));tocDone=true;}
-    const h=renderBlock(b,nums[i],ctx); if(h)parts.push(h);
-  });
+  if(s.showToc&&heads.length)parts.push(renderToc(heads,ctx.foldMode));
+  if(s.infobox.enabled||(s.showToc&&heads.length))parts.push('<div style="clear:both;"></div>');
+  s.blocks.forEach((b,i)=>{const h=renderBlock(b,nums[i],ctx); if(h)parts.push(h);});
   if(ctx.fns.length)parts.push(`<div style="clear:both;margin-top:2em;border-top:1px solid #cccccc;padding-top:8px;font-size:0.88em;line-height:1.75;">${ctx.fns.map(f=>`<div id="nw-fn-${f.n}"><a href="#nw-rfn-${f.n}" style="color:${LINK};text-decoration:none;">[${esc(f.label)}]</a> ${f.html}</div>`).join('')}</div>`);
   const root=`font-family:'Pretendard Variable','Pretendard','Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;font-size:15px;line-height:1.6;text-align:left;word-break:keep-all;overflow-wrap:break-word;${s.fixBg?'background:#ffffff;color:#212529;':''}`;
   return `${forExport&&s.loadFont?FONT_LINK+'\n':''}<div style="${root}">\n${parts.join('\n')}\n<div style="clear:both;"></div>\n</div>`;
@@ -701,14 +713,21 @@ function openModal(title,...kids){
   const onKey=e=>{if(e.key==='Escape'){close();document.removeEventListener('keydown',onKey);}}; document.addEventListener('keydown',onKey);
   return close;
 }
-function copyFrom(ta,msg){
-  const done=()=>toast(msg||'복사했어요');
-  const fallback=()=>{ta.focus();ta.select(); let ok=false; try{ok=document.execCommand('copy');}catch(e){} ok?done():toast('전체 선택해 두었어요. Ctrl+C(⌘+C)로 복사하세요');};
-  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(ta.value).then(done,fallback); else fallback();
+function copyText(text){
+  const t=document.createElement('textarea'); t.value=text; t.setAttribute('readonly','');
+  t.style.cssText='position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;';
+  document.body.append(t); t.focus(); t.select(); try{t.setSelectionRange(0,text.length);}catch(e){}
+  let ok=false; try{ok=document.execCommand('copy');}catch(e){} t.remove();
+  if(ok)return Promise.resolve(true);
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(text).then(()=>true,()=>false);
+  return Promise.resolve(false);
 }
-$('#btnExport').onclick=()=>{
+function copyFrom(ta,msg){
+  copyText(ta.value).then(ok=>{ if(ok)toast(msg||'복사했어요'); else {ta.focus();ta.select();toast('전체 선택해 뒀어요. Ctrl+C(⌘+C)로 복사하세요');} });
+}
+function openExport(){
   const html=renderDoc(state,true);
-  const ta=h('textarea',{class:'in code',readOnly:true,rows:12,'aria-label':'내보낸 HTML'}); ta.value=html;
+  const ta=h('textarea',{class:'in code',readOnly:true,rows:12,'aria-label':'내보낸 HTML',onclick:e=>e.target.select(),onfocus:e=>e.target.select()}); ta.value=html;
   const hasData=/src="data:/.test(html);
   openModal('티스토리용 HTML',
     h('ol',{class:'steps'},
@@ -720,6 +739,14 @@ $('#btnExport').onclick=()=>{
     hasData?h('p',{class:'note'},'파일에서 넣은 이미지가 HTML 안에 통째로 들어가 있어요. 글이 무거워지거나 티스토리가 이미지를 거를 수 있으니, 티스토리에 이미지를 먼저 올리고 그 주소를 이미지 칸에 붙여넣는 쪽을 추천해요.'):null,
     state.loadFont?h('p',{class:'note'},'맨 앞줄의 <link>가 프리텐다드 글꼴을 불러옵니다. 글꼴이 안 바뀌면 이 한 줄을 티스토리 [꾸미기 → 스킨 편집 → html]의 <head> 안에 넣어 두세요. 그러면 모든 글에 적용돼요.'):null,
     h('p',{class:'note'},state.foldMode==='tistory'?'접기는 티스토리 더보기 블록으로 내보냈어요. 버튼 모양은 스킨의 더보기 디자인을 따라요.':'접기가 티스토리에서 펼쳐지지 않으면 문서 설정의 접기 방식을 “티스토리 더보기 블록”으로 바꿔 다시 내보내 보세요.'));
+  requestAnimationFrame(()=>{ta.focus();ta.select();});
+}
+$('#btnExport').onclick=openExport;
+$('#btnCopy').onclick=()=>{
+  copyText(renderDoc(state,true)).then(ok=>{
+    if(ok)toast('HTML을 복사했어요. 티스토리 HTML 모드에 붙여넣으세요');
+    else {openExport(); toast('자동 복사가 막혔어요. 전체 선택해 뒀으니 Ctrl+C(⌘+C)를 누르세요');}
+  });
 };
 $('#btnBackup').onclick=()=>{
   const ta=h('textarea',{class:'in code',rows:10,'aria-label':'백업 데이터'}); ta.value=JSON.stringify(state);
@@ -747,4 +774,5 @@ renderEditor(); paint();
 })();
 </script>
 
-</body></html>
+</body>
+</html>
