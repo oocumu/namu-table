@@ -202,7 +202,7 @@ const uid=()=>Math.random().toString(36).slice(2,9);
 const SAMPLE_IMG='data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="400" height="460" viewBox="0 0 400 460"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d4def0"/><stop offset="1" stop-color="#8aa1cf"/></linearGradient></defs><rect width="400" height="460" fill="url(#g)"/><circle cx="200" cy="170" r="76" fill="#2b4a8b" opacity=".85"/><path d="M68 460c10-118 70-178 132-178s122 60 132 178z" fill="#2b4a8b" opacity=".85"/><text x="200" y="438" font-family="sans-serif" font-size="20" fill="#ffffff" text-anchor="middle">예시 이미지</text></svg>');
 
 function blank(){
-  return {title:'',categories:'',showTitle:true,showToc:true,fixBg:true,loadFont:true,foldMode:'details',_v2:true,
+  return {title:'',categories:'',showTitle:true,showToc:true,fixBg:true,loadFont:true,foldMode:'details',_v3:true,
     infobox:{enabled:true,title:'',subtitle:'',color:'#2b4a8b',textColor:'#ffffff',borderColor:'#2b4a8b',width:'330px',align:'right',valueAlign:'center',image:'',caption:'',
       rows:[{id:uid(),type:'row',label:'이름',value:''}]},
     blocks:[{id:uid(),type:'heading',level:1,text:'개요'},{id:uid(),type:'text',text:''}]};
@@ -221,7 +221,7 @@ function sample(){
     {id:uid(),type:'row',label:'무기',value:"쌍검 ''서리꽃''"},
     {id:uid(),type:'row',label:'좋아하는 것',value:'홍차, 겨울 바다'},
     {id:uid(),type:'row',label:'싫어하는 것',value:'늦잠, 단 음식'},
-    {id:uid(),type:'fold',label:'설정화',foldTitle:'[ 펼치기 · 접기 ]',value:'',imgWidth:'46%',images:[{src:SAMPLE_IMG,caption:'정면'},{src:SAMPLE_IMG,caption:'뒷모습'}]},
+    {id:uid(),type:'fold',label:'설정화',foldTitle:'[펼치기 · 접기]',value:'',imgWidth:'46%',images:[{src:SAMPLE_IMG,caption:'정면'},{src:SAMPLE_IMG,caption:'뒷모습'}]},
     {id:uid(),type:'full',label:'',value:"{{{#2b4a8b '''차가운 머리, 뜨거운 칼.'''}}}"}
   ]});
   s.blocks=[
@@ -259,8 +259,12 @@ function normalize(o){
   return s;
 }
 let state=null;
-try{const raw=localStorage.getItem(LS_KEY); if(raw)state=normalize(JSON.parse(raw));}catch(e){}
-if(state&&!state._v2){state.infobox.align='right';state.infobox.width='330px';state._v2=true;}
+function migrate(s){
+  s.infobox.align='right'; s.infobox.width='330px';
+  const b=s.blocks; if(b.length>1&&b[0].type==='quote'&&b[1].type==='heading'){const q=b[0];b[0]=b[1];b[1]=q;}
+  s._v3=true;
+}
+try{const raw=localStorage.getItem(LS_KEY); if(raw){const o=JSON.parse(raw); const old=!o._v3; state=normalize(o); if(old)migrate(state);}}catch(e){}
 if(!state)state=sample();
 
 /* ---------- renderer (exported HTML: inline styles only, no classes, no scripts) ---------- */
@@ -331,9 +335,12 @@ function renderInfobox(ib,ctx){
   if(ib.image) rows+=`<tr><td colspan="2" style="${cell}background:#ffffff;text-align:center;padding:8px;"><img src="${esc(ib.image)}" alt="${esc(ib.title||'')}" style="display:block;max-width:100%;height:auto;margin:0 auto;border:0;">${ib.caption?`<div style="font-size:0.85em;color:#666666;margin-top:6px;">${inline(ib.caption,ctx)}</div>`:''}</td></tr>`;
   (ib.rows||[]).forEach(r=>{
     if(r.type==='fold'){
-      rows+=`<tr><td colspan="2" style="${cell}background:${bg};color:${tc};text-align:center;font-weight:bold;">${inline(r.label,ctx)||'&nbsp;'}</td></tr>`;
+      const lab=inline(r.label,ctx);
       const inner=`${r.value?`<div style="line-height:1.7;">${inline(r.value,ctx)}</div>`:''}${renderGallery(r.images,r.imgWidth,ctx)}`;
-      rows+=`<tr><td colspan="2" style="${cell}text-align:center;">${renderFold(r.foldTitle,inner,ctx)}</td></tr>`;
+      if(ctx.foldMode==='tistory'){
+        rows+=`<tr><td colspan="2" style="${cell}background:${bg};color:${tc};text-align:center;font-weight:bold;">${lab||'&nbsp;'}</td></tr>`;
+        rows+=`<tr><td colspan="2" style="${cell}text-align:center;">${renderFold(r.foldTitle,inner,ctx)}</td></tr>`;
+      } else rows+=`<tr><td colspan="2" style="border:1px solid ${bc};padding:0;background:${bg};">${foldBar(lab,r.foldTitle,inner,bg,tc,bc,ctx)}</td></tr>`;
     }
     else if(r.type==='header') rows+=`<tr><td colspan="2" style="${cell}background:${bg};color:${tc};text-align:center;font-weight:bold;">${inline(r.label,ctx)||'&nbsp;'}</td></tr>`;
     else if(r.type==='full') rows+=`<tr><td colspan="2" style="${cell}text-align:${va};">${inline(r.value,ctx)||'&nbsp;'}</td></tr>`;
@@ -389,12 +396,17 @@ function renderFold(title,inner,ctx){
   }
   return `<details style="margin:0;"><summary style="display:block;list-style:none;cursor:pointer;font-weight:bold;padding:4px 0;">${inline(t,ctx)}</summary><div style="padding:6px 0 4px;">${inner}</div></details>`;
 }
+function foldBar(lab,toggle,inner,bg,tc,bc,ctx){
+  const t=inline(toggle||'[펼치기 · 접기]',ctx);
+  return `<details style="margin:0;"><summary style="display:block;list-style:none;cursor:pointer;background:${bg};color:${tc};font-weight:bold;text-align:center;padding:5px 10px;line-height:1.5;">${lab}${lab?' ':''}${t}</summary><div style="background:#ffffff;color:#212529;padding:8px 10px;border-top:1px solid ${bc};text-align:center;line-height:1.6;">${inner||'&nbsp;'}</div></details>`;
+}
 function renderFoldBlock(b,ctx){
   const bg=safeColor(b.color,'#2b4a8b'), tc=safeColor(b.textColor,'#ffffff');
-  const label=b.style==='box'?(inline(b.label,ctx)||'&nbsp;'):'';
+  const label=b.style==='box'?inline(b.label,ctx):'';
   const inner=`${b.text?`<div style="line-height:1.75;">${inline(b.text,ctx)}</div>`:''}${renderGallery(b.images,b.imgWidth,ctx)}`;
+  if(b.style==='box'&&ctx.foldMode!=='tistory') return `<table style="width:100%;border-collapse:collapse;border:1px solid ${bg};margin:10px 0 16px;"><tr><td style="padding:0;background:${bg};border:1px solid ${bg};">${foldBar(label,b.title,inner,bg,tc,bg,ctx)}</td></tr></table>`;
   const f=renderFold(b.title,inner,ctx);
-  if(b.style==='box') return `<table style="width:100%;border-collapse:collapse;border:2px solid ${bg};margin:10px 0 16px;"><tr><td style="background:${bg};color:${tc};text-align:center;font-weight:bold;padding:6px 10px;border:1px solid ${bg};">${label}</td></tr><tr><td style="text-align:center;padding:5px 10px;border:1px solid ${bg};background:#ffffff;">${f}</td></tr></table>`;
+  if(b.style==='box') return `<table style="width:100%;border-collapse:collapse;border:2px solid ${bg};margin:10px 0 16px;"><tr><td style="background:${bg};color:${tc};text-align:center;font-weight:bold;padding:6px 10px;border:1px solid ${bg};">${label||'&nbsp;'}</td></tr><tr><td style="text-align:center;padding:5px 10px;border:1px solid ${bg};background:#ffffff;">${f}</td></tr></table>`;
   return `<div style="margin:8px 0 14px;">${f}</div>`;
 }
 function hid(n){return 'nw-s-'+n.replace(/\./g,'-')}
@@ -560,7 +572,7 @@ function ibSec(){
     const ctl=h('div',{class:'ctl'},iconBtn('↑','위로',()=>move(ib.rows,i,-1),i===0),iconBtn('↓','아래로',()=>move(ib.rows,i,1),i===ib.rows.length-1),delBtn(()=>{ib.rows.splice(i,1);structural();}));
     let row;
     if(r.type==='fold')row=h('div',{class:'ibrow hdr'},typeSel,h('div',{class:'wide'},tf(r,'label',{ph:'예: TVA 설정화',cls:'lbl',label:'접기 제목'})),ctl,
-      h('div',{class:'ibfold'},fld('펼치기 버튼 글자',tf(r,'foldTitle',{ph:'[ 펼치기 · 접기 ]'})),tf(r,'value',{multi:true,rows:2,ph:'접힌 안쪽 글 (선택)',label:'접힌 안쪽 글'}),galleryEd(r)));
+      h('div',{class:'ibfold'},fld('펼치기 버튼 글자 (제목 뒤에 붙음)',tf(r,'foldTitle',{ph:'[펼치기 · 접기]'})),tf(r,'value',{multi:true,rows:2,ph:'접힌 안쪽 글 (선택)',label:'접힌 안쪽 글'}),galleryEd(r)));
     else if(r.type==='header')row=h('div',{class:'ibrow hdr'},typeSel,h('div',{class:'wide'},tf(r,'label',{ph:'구분 제목',cls:'lbl',label:'구분 제목'})),ctl);
     else if(r.type==='full')row=h('div',{class:'ibrow'},typeSel,h('div',{class:'wide'},tf(r,'value',{ph:'두 칸을 합친 내용',label:'내용'})),ctl);
     else row=h('div',{class:'ibrow'},typeSel,tf(r,'label',{ph:'항목',label:'항목'}),tf(r,'value',{ph:'내용',label:'내용'}),ctl);
@@ -579,7 +591,7 @@ function ibSec(){
       h('button',{class:'btn sm',type:'button',onclick:()=>{ib.rows.push({id:uid(),type:'row',label:'',value:''});structural();}},'+ 항목'),
       h('button',{class:'btn sm',type:'button',onclick:()=>{ib.rows.push({id:uid(),type:'header',label:'',value:''});structural();}},'+ 구분 제목'),
       h('button',{class:'btn sm',type:'button',onclick:()=>{ib.rows.push({id:uid(),type:'full',label:'',value:''});structural();}},'+ 전체 칸'),
-      h('button',{class:'btn sm',type:'button',onclick:()=>{ib.rows.push({id:uid(),type:'fold',label:'설정화',foldTitle:'[ 펼치기 · 접기 ]',value:'',images:[{src:'',caption:''}],imgWidth:'48%'});structural();}},'+ 접기')));
+      h('button',{class:'btn sm',type:'button',onclick:()=>{ib.rows.push({id:uid(),type:'fold',label:'설정화',foldTitle:'[펼치기 · 접기]',value:'',images:[{src:'',caption:''}],imgWidth:'48%'});structural();}},'+ 접기')));
   return sec;
 }
 function tableEditor(b){
@@ -752,7 +764,7 @@ $('#btnBackup').onclick=()=>{
   const ta=h('textarea',{class:'in code',rows:10,'aria-label':'백업 데이터'}); ta.value=JSON.stringify(state);
   const file=h('input',{type:'file',accept:'.json,application/json,text/plain',hidden:true});
   let close;
-  const load=txt=>{try{const o=JSON.parse(txt); if(!o||!Array.isArray(o.blocks))throw 0; state=normalize(o); structural(); close(); toast('불러왔어요');}catch(e){toast('백업 형식이 아니에요. 복사한 내용을 그대로 붙여넣어 주세요.');}};
+  const load=txt=>{try{const o=JSON.parse(txt); if(!o||!Array.isArray(o.blocks))throw 0; const old=!o._v3; state=normalize(o); if(old)migrate(state); structural(); close(); toast('불러왔어요');}catch(e){toast('백업 형식이 아니에요. 복사한 내용을 그대로 붙여넣어 주세요.');}};
   file.onchange=()=>{const f=file.files[0]; if(!f)return; const r=new FileReader(); r.onload=()=>load(String(r.result)); r.readAsText(f);};
   close=openModal('백업 · 불러오기',
     h('p',{class:'note'},'작성 중인 문서는 이 브라우저에 자동 저장됩니다. 다른 기기로 옮기거나 여러 문서를 따로 두려면 아래 내용을 복사해 메모장 등에 보관하세요.'),
