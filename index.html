@@ -255,6 +255,7 @@ function normalize(o){
   if(!Array.isArray(s.blocks))s.blocks=[];
   s.infobox.rows.forEach(r=>{r.id=r.id||uid(); if(!Array.isArray(r.images))r.images=[];});
   s.blocks.forEach(x=>{x.id=x.id||uid(); if(x.type==='table'&&!Array.isArray(x.rows))x.rows=[['']];
+    if(x.type==='navbox'&&!Array.isArray(x.images))x.images=[];
     if(x.type==='fold'){if(!Array.isArray(x.images))x.images=[]; x.style=x.style||'plain'; x.color=x.color||s.infobox.color||'#2b4a8b'; x.textColor=x.textColor||s.infobox.textColor||'#ffffff'; if(x.label==null)x.label=''; if(x.imgWidth==null)x.imgWidth='';}});
   return s;
 }
@@ -409,6 +410,16 @@ function renderFoldBlock(b,ctx){
   if(b.style==='box') return `<table style="width:100%;border-collapse:collapse;border:2px solid ${bg};margin:10px 0 16px;"><tr><td style="background:${bg};color:${tc};text-align:center;font-weight:bold;padding:6px 10px;border:1px solid ${bg};">${label||'&nbsp;'}</td></tr><tr><td style="text-align:center;padding:5px 10px;border:1px solid ${bg};background:#ffffff;">${f}</td></tr></table>`;
   return `<div style="margin:8px 0 14px;">${f}</div>`;
 }
+function renderNavbox(b,ctx){
+  const bc=safeColor(b.borderColor,'#333333'), line='border-bottom:1px solid #dddddd;'; const rows=[];
+  if(b.image)rows.push(`<td style="padding:6px;text-align:center;${line}"><img src="${esc(b.image)}" alt="${esc(b.title||'')}" style="display:block;max-width:100%;height:auto;margin:0 auto;border:0;"></td>`);
+  if(b.title)rows.push(`<td style="padding:6px 10px;text-align:center;font-weight:bold;font-size:1.2em;background:${safeColor(b.titleBg,'#ffffff')};color:${safeColor(b.titleColor,'#212529')};${line}">${inline(b.title,ctx)}</td>`);
+  if(b.sub)rows.push(`<td style="padding:5px 10px;text-align:center;font-weight:bold;${line}">${inline(b.sub,ctx)}</td>`);
+  const inner=`${b.body?`<div style="line-height:1.8;">${inline(b.body,ctx)}</div>`:''}${renderGallery(b.images,b.imgWidth,ctx)}`;
+  if(inner)rows.push(`<td style="padding:2px 10px;text-align:center;">${renderFold(b.toggle,inner,ctx)}</td>`);
+  if(!rows.length)return '';
+  return `<table style="width:${cssLen(b.width,'600px')};max-width:100%;border-collapse:collapse;border:2px solid ${bc};margin:0 auto 16px;background:#ffffff;color:#212529;">${rows.map(r=>`<tr>${r}</tr>`).join('')}</table>`;
+}
 function hid(n){return 'nw-s-'+n.replace(/\./g,'-')}
 function renderToc(heads,mode){
   const items=heads.map(x=>`<div style="margin-left:${(x.L-1)*20}px;line-height:1.75;"><a href="#${hid(x.n)}" style="color:${LINK};text-decoration:none;">${x.n}.</a> ${inline(x.text,{fns:null})}</div>`).join('');
@@ -427,6 +438,9 @@ function renderBlock(b,n,ctx){
     case 'hr': return `<hr style="border:0;border-top:1px solid #cccccc;margin:16px 0;height:0;">`;
     case 'image': if(!b.src)return '';
       return `<div style="text-align:${b.align||'center'};margin:12px 0 16px;"><img src="${esc(b.src)}" alt="${esc(b.caption||'')}" style="max-width:100%;${cssLen(b.width)?`width:${cssLen(b.width)};`:''}height:auto;border:0;">${b.caption?`<div style="font-size:0.88em;color:#666666;margin-top:4px;">${inline(b.caption,ctx)}</div>`:''}</div>`;
+    case 'navbox': return renderNavbox(b,ctx);
+    case 'spoiler':{const c=safeColor(b.color,'#c0392b');
+      return `<div style="border:2px solid ${c};margin:0 auto 16px;padding:8px 12px;background:#ffffff;color:#212529;text-align:center;line-height:1.6;"><div style="font-weight:bold;color:${c};font-size:1.05em;">⚠ ${inline(b.title,ctx)}</div>${b.text?`<div style="font-size:0.9em;margin-top:2px;">${inline(b.text,ctx)}</div>`:''}</div>`;}
     case 'table': return renderTable(b,ctx);
   }
   return '';
@@ -440,12 +454,13 @@ function renderDoc(s,forExport){
   if(s.showTitle&&s.title)parts.push(`<div style="font-size:2em;font-weight:bold;line-height:1.3;margin:0 0 10px;">${esc(s.title)}</div>`);
   const cats=String(s.categories||'').split(',').map(x=>x.trim()).filter(Boolean);
   if(cats.length)parts.push(`<div style="border:1px solid #cccccc;padding:5px 10px;margin:0 0 14px;font-size:0.9em;">분류: ${cats.map(c=>`<span style="color:${LINK};">${esc(c)}</span>`).join(' <span style="color:#999999;">|</span> ')}</div>`);
+  s.blocks.forEach(b=>{if(isTop(b)){const x=renderBlock(b,null,ctx); if(x)parts.push(x);}});
   if(s.infobox.enabled)parts.push(renderInfobox(s.infobox,ctx));
   const nums=headingNums(s.blocks); const heads=[];
   s.blocks.forEach((b,i)=>{if(nums[i])heads.push({n:nums[i],L:Math.min(3,Math.max(1,+b.level||1)),text:b.text})});
   if(s.showToc&&heads.length)parts.push(renderToc(heads,ctx.foldMode));
   if(s.infobox.enabled||(s.showToc&&heads.length))parts.push('<div style="clear:both;"></div>');
-  s.blocks.forEach((b,i)=>{const h=renderBlock(b,nums[i],ctx); if(h)parts.push(h);});
+  s.blocks.forEach((b,i)=>{if(isTop(b))return; const h=renderBlock(b,nums[i],ctx); if(h)parts.push(h);});
   if(ctx.fns.length)parts.push(`<div style="clear:both;margin-top:2em;border-top:1px solid #cccccc;padding-top:8px;font-size:0.88em;line-height:1.75;">${ctx.fns.map(f=>`<div id="nw-fn-${f.n}"><a href="#nw-rfn-${f.n}" style="color:${LINK};text-decoration:none;">[${esc(f.label)}]</a> ${f.html}</div>`).join('')}</div>`);
   const root=`font-family:'Pretendard Variable','Pretendard','Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;font-size:15px;line-height:1.6;text-align:left;word-break:keep-all;overflow-wrap:break-word;${s.fixBg?'background:#ffffff;color:#212529;':''}`;
   return `${forExport&&s.loadFont?FONT_LINK+'\n':''}<div style="${root}">\n${parts.join('\n')}\n<div style="clear:both;"></div>\n</div>`;
@@ -532,13 +547,16 @@ function imgField(obj,key){
 }
 
 /* ---------- editor sections ---------- */
-const TYPE={heading:'문단 제목',text:'본문',quote:'인용문',table:'표',image:'이미지',fold:'접기',hr:'구분선'};
+const TYPE={heading:'문단 제목',text:'본문',quote:'인용문',table:'표',image:'이미지',fold:'접기',hr:'구분선',navbox:'상단 틀',spoiler:'스포일러 안내'};
+const isTop=b=>b.top&&(b.type==='navbox'||b.type==='spoiler');
 function newBlock(type){
   const b={id:uid(),type};
   if(type==='heading'){b.level=1;b.text='새 문단'}
   if(type==='text'||type==='quote')b.text='';
   if(type==='fold')Object.assign(b,{title:'[ 펼치기 · 접기 ]',text:'',style:'plain',label:'',color:state.infobox.color||'#2b4a8b',textColor:state.infobox.textColor||'#ffffff',images:[],imgWidth:''});
   if(type==='image'){b.src='';b.caption='';b.width='';b.align='center'}
+  if(type==='navbox')Object.assign(b,{top:true,image:'',title:'상단 틀 제목',titleBg:'#ffffff',titleColor:'#212529',sub:'',toggle:'[ 펼치기 · 접기 ]',body:'',images:[],imgWidth:'',borderColor:'#333333',width:'600px'});
+  if(type==='spoiler')Object.assign(b,{top:true,title:'이 문서에 스포일러가 포함되어 있습니다.',text:'이 문서가 설명하는 작품이나 인물 등에 대한 줄거리, 결말, 반전 요소 등을 직·간접적으로 포함하고 있습니다.',color:'#c0392b'});
   if(type==='table')Object.assign(b,{headerRow:true,headerCol:false,headColor:state.infobox.color||'#2b4a8b',headText:state.infobox.textColor||'#ffffff',borderColor:'#cccccc',width:'100%',align:'center',cellAlign:'left',caption:'',rows:[['항목','내용'],['','']]});
   return b;
 }
@@ -640,6 +658,22 @@ function blockCard(b,i,num){
       tf(b,'text',{multi:true,rows:3,ph:'펼쳤을 때 보이는 글 (선택)',label:'접힌 내용'}),
       galleryEd(b)); break;
     case 'image': body=h('div',{class:'bbody'},imgField(b,'src'),h('div',{class:'g3'},fld('너비',tf(b,'width',{fmt:false,ph:'비우면 원본 / 300px'})),fld('정렬',sel(b,'align',[['center','가운데'],['left','왼쪽'],['right','오른쪽']])),fld('설명',tf(b,'caption')))); break;
+    case 'navbox': body=h('div',{class:'bbody'},
+      h('div',{class:'checks'},cb(b,'top','문서 맨 위(목차·인포박스 위)에 배치')),
+      h('div',{class:'f'},h('span',{class:'lab'},'로고·대표 이미지 (선택)'),imgField(b,'image')),
+      h('div',{class:'g2'},fld('제목 글자 (선택)',tf(b,'title')),fld('틀 너비',tf(b,'width',{fmt:false,ph:'600px / 100%'}))),
+      h('div',{class:'colors'},clr(b,'titleBg','제목 배경'),clr(b,'titleColor','제목 글자'),clr(b,'borderColor','테두리')),
+      fld('소제목 줄 (선택)',tf(b,'sub',{ph:'예: 동방사단 방위대 제3부대'})),
+      fld('펼치기 버튼 글자',tf(b,'toggle')),
+      tf(b,'body',{multi:true,rows:3,ph:'펼쳤을 때 보이는 내용. 예: [[인물 A]] · [[인물 B]] · [[인물 C]]',label:'접힌 내용'}),
+      galleryEd(b),
+      h('p',{class:'note'},'접힌 내용을 비우면 펼치기 줄 없이 이미지·제목만 나와요.')); break;
+    case 'spoiler': body=h('div',{class:'bbody'},
+      h('div',{class:'checks'},cb(b,'top','문서 맨 위에 배치')),
+      fld('제목',tf(b,'title')),
+      tf(b,'text',{multi:true,rows:2,label:'설명'}),
+      h('div',{class:'colors'},clr(b,'color','강조색')),
+      h('p',{class:'note'},'스포일러 내용 자체를 가리고 싶으면 본문에 접기 블록을 넣고 버튼 글자를 [ 스포일러 보기 ]처럼 바꾸세요.')); break;
     case 'table': body=tableEditor(b); break;
     default: body=null;
   }
@@ -649,7 +683,7 @@ function blocksSec(){
   const nums=headingNums(state.blocks);
   const cards=h('div',{class:'cards'},state.blocks.map((b,i)=>blockCard(b,i,nums[i])));
   const add=h('div',{class:'addbar'},h('span',{class:'lab'},'블록 추가'),
-    Object.keys(TYPE).map(t=>h('button',{class:'btn sm',type:'button',onclick:()=>{state.blocks.push(newBlock(t));structural();requestAnimationFrame(()=>{const e=$('#edit .cards').lastElementChild; e&&e.scrollIntoView({block:'center'});const f=e&&e.querySelector('.fmt');f&&f.focus();});}},'+ '+TYPE[t])));
+    Object.keys(TYPE).map(t=>h('button',{class:'btn sm',type:'button',onclick:()=>{const top=t==='navbox'||t==='spoiler'; if(top)state.blocks.unshift(newBlock(t)); else state.blocks.push(newBlock(t)); structural();requestAnimationFrame(()=>{const cs=$('#edit .cards'); const e=top?cs.firstElementChild:cs.lastElementChild; e&&e.scrollIntoView({block:'center'});const f=e&&e.querySelector('.fmt');f&&f.focus();});}},'+ '+TYPE[t])));
   return h('section',{class:'sec'},h('h2',{},'본문'),cards,add);
 }
 function helpSec(){
