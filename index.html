@@ -230,54 +230,12 @@ const $=s=>document.querySelector(s);
 const uid=()=>Math.random().toString(36).slice(2,9);
 
 /* ---------- data ---------- */
-const SAMPLE_IMG='data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="400" height="460" viewBox="0 0 400 460"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d4def0"/><stop offset="1" stop-color="#8aa1cf"/></linearGradient></defs><rect width="400" height="460" fill="url(#g)"/><circle cx="200" cy="170" r="76" fill="#2b4a8b" opacity=".85"/><path d="M68 460c10-118 70-178 132-178s122 60 132 178z" fill="#2b4a8b" opacity=".85"/><text x="200" y="438" font-family="sans-serif" font-size="20" fill="#ffffff" text-anchor="middle">예시 이미지</text></svg>');
 
 function blank(){
   return {title:'',categories:'',showTitle:true,showToc:true,fixBg:true,loadFont:true,foldMode:'details',_v3:true,
     infobox:{enabled:true,title:'',subtitle:'',color:'#2b4a8b',textColor:'#ffffff',borderColor:'#2b4a8b',width:'330px',align:'right',valueAlign:'center',image:'',caption:'',
       rows:[{id:uid(),type:'row',label:'이름',value:''}]},
     blocks:[{id:uid(),type:'heading',level:1,text:'개요'},{id:uid(),type:'text',text:''}]};
-}
-function sample(){
-  const s=blank();
-  s.title='아델 린드버그'; s.categories='등장인물, 북해 연합 기사단';
-  Object.assign(s.infobox,{title:'아델 린드버그',subtitle:'Adel Lindberg',image:SAMPLE_IMG,caption:'기사단 정복 차림 (예시 이미지)',rows:[
-    {id:uid(),type:'header',label:'기본 정보',value:''},
-    {id:uid(),type:'row',label:'나이',value:'27세'},
-    {id:uid(),type:'row',label:'생일',value:'2월 11일'},
-    {id:uid(),type:'row',label:'신장',value:'172cm'},
-    {id:uid(),type:'row',label:'소속',value:'[[https://example.com|북해 연합 기사단]]'},
-    {id:uid(),type:'row',label:'직위',value:'제3대대 대장[* 역대 최연소 대대장이다.]'},
-    {id:uid(),type:'header',label:'특징',value:''},
-    {id:uid(),type:'row',label:'무기',value:"쌍검 ''서리꽃''"},
-    {id:uid(),type:'row',label:'좋아하는 것',value:'홍차, 겨울 바다'},
-    {id:uid(),type:'row',label:'싫어하는 것',value:'늦잠, 단 음식'},
-    {id:uid(),type:'fold',label:'설정화',foldTitle:'[펼치기 · 접기]',value:'',imgWidth:'46%',images:[{src:SAMPLE_IMG,caption:'정면'},{src:SAMPLE_IMG,caption:'뒷모습'}]},
-    {id:uid(),type:'full',label:'',value:"{{{#2b4a8b '''차가운 머리, 뜨거운 칼.'''}}}"}
-  ]});
-  s.blocks=[
-    {id:uid(),type:'heading',level:1,text:'개요'},
-    {id:uid(),type:'quote',text:"'''검은 깃발 아래에서 물러선 적은 한 번도 없다.'''\n― 아델 린드버그, 북해 방어전 직후"},
-    {id:uid(),type:'text',text:"북해 연합 기사단 제3대대를 이끄는 대장. 차분한 말투와 빈틈없는 판단으로 부하들의 신뢰를 받는다.[* 대대원들 사이에서는 '얼음 대장'이라는 별명으로 통한다.]\n전장에서는 쌍검술을 주로 쓰며, 겨울 정령과 맺은 계약 덕분에 냉기 계열 기술에 강하다."},
-    {id:uid(),type:'heading',level:1,text:'외모'},
-    {id:uid(),type:'text',text:'은빛이 도는 짧은 흑발과 회청색 눈. 기사단 정복 위에 낡은 남색 망토를 두르는데, 전임 대장에게서 물려받은 것이다.[* 망토 안쪽에는 역대 대장들의 이름이 수놓여 있다.]'},
-    {id:uid(),type:'heading',level:1,text:'성격'},
-    {id:uid(),type:'text',text:"겉으로는 ''무뚝뚝하고 엄격''하지만 부하의 이름과 생일을 전부 외우고 있을 만큼 세심하다. 다만 {{{#c0392b 단 음식}}}만 보면 표정이 굳는다."},
-    {id:uid(),type:'heading',level:1,text:'능력'},
-    {id:uid(),type:'heading',level:2,text:'쌍검술'},
-    {id:uid(),type:'text',text:'양손에 같은 길이의 검을 쥐고 쉴 틈 없이 몰아치는 방식. 방어보다 흐름을 끊지 않는 데 중점을 둔다.'},
-    {id:uid(),type:'heading',level:2,text:'정령 계약'},
-    {id:uid(),type:'table',headerRow:true,headerCol:false,headColor:'#2b4a8b',headText:'#ffffff',borderColor:'#cccccc',width:'100%',align:'center',cellAlign:'left',caption:'',
-      rows:[['기술','속성','설명'],['서리 매듭','냉기','상대의 발을 얼려 묶는다.'],['백야의 장막','냉기·방어','짧은 시간 동안 냉기 방벽을 친다.'],['겨울 숨결','냉기','검에 냉기를 실어 베어낸다.[* 연속으로 쓰면 손끝이 얼어붙는 부작용이 있다.]']]},
-    {id:uid(),type:'heading',level:1,text:'주요 전적'},
-    {id:uid(),type:'table',headerRow:true,headerCol:false,headColor:'#e8edf6',headText:'#2b4a8b',borderColor:'#cccccc',width:'100%',align:'center',cellAlign:'center',caption:'',
-      rows:[['연도','사건','결과'],['1021','북해 방어전','<#e6f4ea>승리'],['1023','서리 협곡 토벌','<#fbe9e7>철수'],['1024','<-2>제3대대 대장 취임','']]},
-    {id:uid(),type:'heading',level:1,text:'인간관계'},
-    {id:uid(),type:'fold',style:'plain',label:'',color:'#2b4a8b',textColor:'#ffffff',images:[],imgWidth:'',title:'[ 펼치기 · 접기 ]',text:"'''이리스 벨''' ― 부관. 아델의 늦잠을 매일 아침 깨우는 유일한 사람.\n'''노아 크레인''' ― 제1대대 대장. 사관학교 동기이자 경쟁자."},
-    {id:uid(),type:'heading',level:1,text:'기타'},
-    {id:uid(),type:'text',text:'홍차는 ~~설탕 두 스푼~~ 설탕 없이 마신다.[* 본인은 원래부터 그랬다고 주장한다.]'}
-  ];
-  return s;
 }
 function normalize(o){
   const b=blank(); const s=Object.assign(b,o||{});
@@ -298,7 +256,8 @@ function migrate(s){
   s._v3=true;
 }
 try{const raw=localStorage.getItem(LS_KEY); if(raw){const o=JSON.parse(raw); const old=!o._v3; state=normalize(o); if(old)migrate(state);}}catch(e){}
-if(!state)state=sample();
+if(state&&state.title==='아델 린드버그'&&state.infobox&&state.infobox.title==='아델 린드버그')state=null;
+if(!state)state=blank();
 
 /* ---------- renderer (exported HTML: inline styles only, no classes, no scripts) ---------- */
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
@@ -668,7 +627,7 @@ document.addEventListener('keydown',e=>{
 });
 function docSec(){
   return secWrap('doc','문서 설정',null,
-    h('div',{class:'g2'},fld('문서 제목',tf(state,'title',{fmt:false,ph:'예: 아델 린드버그'})),fld('분류 (쉼표로 구분)',tf(state,'categories',{fmt:false,ph:'예: 등장인물, 기사단'}))),
+    h('div',{class:'g2'},fld('문서 제목',tf(state,'title',{fmt:false,ph:'문서 이름'})),fld('분류 (쉼표로 구분)',tf(state,'categories',{fmt:false,ph:'예: 등장인물, 작품명'}))),
     h('div',{class:'checks'},cb(state,'showTitle','본문 위에 문서 제목 표시'),cb(state,'showToc','목차 자동 생성'),cb(state,'fixBg','흰 배경·검은 글자 고정'),cb(state,'loadFont','프리텐다드 글꼴 불러오기 코드 포함')),
     fld('접기 방식 (내보낼 때)',sel(state,'foldMode',[['details','기본 HTML 접기 (권장)'],['tistory','티스토리 더보기 블록']])),
     h('p',{class:'note'},'티스토리 글 제목이 따로 있으니 문서 제목 표시는 꺼도 됩니다. 어두운 스킨을 쓴다면 배경 고정을 켜 두세요.'));
@@ -909,9 +868,7 @@ $('#btnBackup').onclick=()=>{
     h('div',{class:'row'},
       h('button',{class:'btn pri',type:'button',onclick:()=>copyFrom(ta,'백업 내용을 복사했어요')},'백업 복사'),
       h('button',{class:'btn',type:'button',onclick:()=>load(ta.value)},'붙여넣은 내용으로 불러오기'),
-      h('button',{class:'btn',type:'button',onclick:()=>file.click()},'파일에서 불러오기'),file,
-      h('span',{class:'sp'}),
-      h('button',{class:'btn',type:'button',onclick:()=>{state=sample();structural();close();toast('예시 문서를 불러왔어요');}},'예시 문서 보기')));
+      h('button',{class:'btn',type:'button',onclick:()=>file.click()},'파일에서 불러오기'),file));
 };
 (function(){const b=$('#btnNew'); let t;
   b.onclick=()=>{ if(b.dataset.armed){clearTimeout(t);delete b.dataset.armed;b.textContent='새 문서';b.classList.remove('armed');state=blank();structural();toast('빈 문서로 시작합니다');return;}
